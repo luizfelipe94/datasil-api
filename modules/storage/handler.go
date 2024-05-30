@@ -64,7 +64,7 @@ func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dto := dto.CreateFileDto{
-		Name:        header.Filename,
+		Name:        utils.GetFileName(header.Filename),
 		Extension:   utils.GetFileExtension(header.Filename),
 		Size:        header.Size,
 		ContentType: header.Header.Get("Content-Type"),

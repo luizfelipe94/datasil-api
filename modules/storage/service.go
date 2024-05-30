@@ -20,7 +20,7 @@ func NewService(db *sql.DB) *Service {
 }
 
 func (s *Service) ListFiles() ([]*models.File, error) {
-	rows, err := s.db.Query("SELECT * FROM storage_files WHERE deletedAt IS NULL LIMIT 10")
+	rows, err := s.db.Query("SELECT * FROM storage_files WHERE deletedAt IS NULL ORDER BY createdAt DESC LIMIT 10")
 	if err != nil {
 		return nil, err
 	}

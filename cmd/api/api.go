@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/luizfelipe94/datasil/modules/storage"
+	"github.com/rs/cors"
 )
 
 type APIServer struct {
@@ -25,5 +26,6 @@ func (s *APIServer) Run() error {
 	storageHandler := storage.NewStorageHandler(s.db)
 	storageHandler.Register(router)
 
-	return http.ListenAndServe(s.addr, router)
+	handler := cors.AllowAll().Handler(router)
+	return http.ListenAndServe(s.addr, handler)
 }

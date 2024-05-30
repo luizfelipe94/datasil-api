@@ -9,3 +9,7 @@ func GetFileExtension(fileName string) string {
 	}
 	return ""
 }
+
+func GetFileName(fileName string) string {
+	return strings.Split(fileName, ".")[0]
+}
