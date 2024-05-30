@@ -1,0 +1,11 @@
+validação de body e dto
+
+// var dto dto.CreateFileDto
+// if err := utils.ParseBody(r, &dto); err != nil {
+// 	utils.ResponseError(w, http.StatusBadRequest, "Missing body")
+// 	return
+// }
+// if err := utils.Validate.Struct(dto); err != nil {
+// 	utils.ResponseError(w, http.StatusBadRequest, err.Error())
+// 	return
+// }

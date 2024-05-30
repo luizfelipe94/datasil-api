@@ -22,7 +22,7 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
 
-	storageHandler := storage.NewStorageHandler()
+	storageHandler := storage.NewStorageHandler(s.db)
 	storageHandler.Register(router)
 
 	return http.ListenAndServe(s.addr, router)

@@ -2,8 +2,10 @@ package storage
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 
+	"github.com/google/uuid"
+	"github.com/luizfelipe94/datasil/modules/storage/dto"
 	"github.com/luizfelipe94/datasil/modules/storage/models"
 )
 
@@ -18,8 +20,7 @@ func NewService(db *sql.DB) *Service {
 }
 
 func (s *Service) ListFiles() ([]*models.File, error) {
-	query := fmt.Sprintf("SELECT * FROM files WHERE deletedAt IS NULL LIMIT 10")
-	rows, err := s.db.Query(query)
+	rows, err := s.db.Query("SELECT * FROM storage_files WHERE deletedAt IS NULL LIMIT 10")
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +32,7 @@ func (s *Service) ListFiles() ([]*models.File, error) {
 			&file.Name,
 			&file.Extension,
 			&file.Size,
+			&file.ContentType,
 			&file.CraetedAt,
 			&file.UpdatedAt,
 			&file.DeletedAt,
@@ -40,4 +42,17 @@ func (s *Service) ListFiles() ([]*models.File, error) {
 		}
 	}
 	return files, nil
+}
+
+func (s *Service) UploadFile(dto dto.CreateFileDto) error {
+	id := uuid.New().String()
+	err := s.db.QueryRow(
+		"INSERT INTO storage_files (id, name, extension, size, contentType) VALUES ($1, $2, $3, $4, $5)",
+		id, dto.Name, dto.Extension, dto.Size, dto.ContentType,
+	)
+	if err != nil {
+		log.Println(err.Err())
+		return nil
+	}
+	return nil
 }

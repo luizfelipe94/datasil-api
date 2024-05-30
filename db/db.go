@@ -13,7 +13,6 @@ func NewDB(cfg *configs.Config) *sql.DB {
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
 	)
-	fmt.Println(dsn)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		panic(err)
