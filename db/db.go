@@ -22,3 +22,10 @@ func NewDB(cfg *configs.Config) *sql.DB {
 	}
 	return db
 }
+
+func CountRows(rows *sql.Rows) (count int) {
+	for rows.Next() {
+		rows.Scan(&count)
+	}
+	return count
+}

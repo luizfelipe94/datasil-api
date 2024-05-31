@@ -2,9 +2,11 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/google/uuid"
+	"github.com/luizfelipe94/datasil/db"
 	"github.com/luizfelipe94/datasil/modules/storage/dto"
 	"github.com/luizfelipe94/datasil/modules/storage/models"
 )
@@ -19,12 +21,32 @@ func NewService(db *sql.DB) *Service {
 	}
 }
 
-func (s *Service) ListFiles() ([]*models.File, error) {
-	rows, err := s.db.Query("SELECT * FROM storage_files WHERE deletedAt IS NULL ORDER BY createdAt DESC LIMIT 10")
+func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
+	rowsCount, err := s.db.Query(`
+		SELECT COUNT(*) AS count 
+		FROM storage_files 
+		WHERE deletedAt IS NULL
+	`)
 	if err != nil {
 		return nil, err
 	}
-	files := make([]*models.File, 0)
+	pageCount := db.CountRows(rowsCount)
+	limit := 10
+	offset := limit * (page - 1)
+	fmt.Println(offset)
+	sql := `
+		SELECT * 
+		FROM storage_files 
+		WHERE deletedAt IS NULL 
+		ORDER BY createdAt DESC
+		OFFSET $1
+		LIMIT $2
+	`
+	rows, err := s.db.Query(sql, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	files := make([]models.File, 0)
 	for rows.Next() {
 		file := new(models.File)
 		err := rows.Scan(
@@ -38,10 +60,11 @@ func (s *Service) ListFiles() ([]*models.File, error) {
 			&file.DeletedAt,
 		)
 		if err != nil {
-			files = append(files, file)
+			files = append(files, *file)
 		}
 	}
-	return files, nil
+	res := db.NewResultSet[models.File](files, page, limit, pageCount)
+	return &res, nil
 }
 
 func (s *Service) UploadFile(dto dto.CreateFileDto) error {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/luizfelipe94/datasil/configs"
 	"github.com/luizfelipe94/datasil/infra"
@@ -40,7 +41,12 @@ func (r *Handler) Register(router *http.ServeMux) {
 }
 
 func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
-	files, err := h.service.ListFiles()
+	var page int = 1
+	if r.URL.Query().Has("page") {
+		t, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		page = t
+	}
+	files, err := h.service.ListFiles(page)
 	if err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
