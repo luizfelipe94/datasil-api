@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/luizfelipe94/datasil/configs"
@@ -17,6 +18,9 @@ func NewDB(cfg *configs.Config) *sql.DB {
 	if err != nil {
 		panic(err)
 	}
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(0)
+	db.SetConnMaxLifetime(time.Nanosecond)
 	if err := db.Ping(); err != nil {
 		panic(err)
 	}

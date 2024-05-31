@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -33,7 +32,6 @@ func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
 	pageCount := db.CountRows(rowsCount)
 	limit := 10
 	offset := limit * (page - 1)
-	fmt.Println(offset)
 	sql := `
 		SELECT * 
 		FROM storage_files 
@@ -78,4 +76,18 @@ func (s *Service) UploadFile(dto dto.CreateFileDto) error {
 		return nil
 	}
 	return nil
+}
+
+func (s *Service) GetStats() (count int, size float64, average float64, err error) {
+	rows, err := s.db.Query(`
+		SELECT count(*) as count, sum(size) as size, avg(size) as average 
+		FROM storage_files
+	`)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	for rows.Next() {
+		rows.Scan(&count, &size, &average)
+	}
+	return count, size, average, nil
 }

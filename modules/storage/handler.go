@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,8 +37,22 @@ func NewStorageHandler(db *sql.DB) *Handler {
 }
 
 func (r *Handler) Register(router *http.ServeMux) {
+	router.HandleFunc("GET /storage/stats", r.handleStats)
 	router.HandleFunc("GET /storage/files", r.handleListFiles)
 	router.HandleFunc("POST /storage/files", r.handleUploadFile)
+}
+
+func (h *Handler) handleStats(w http.ResponseWriter, r *http.Request) {
+	count, size, average, err := h.service.GetStats()
+	if err != nil {
+		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+	utils.ResponseOk(w, http.StatusCreated, map[string]any{
+		"count":   count,
+		"size":    size,
+		"average": average,
+	})
 }
 
 func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
@@ -56,18 +71,18 @@ func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	file, header, _ := r.FormFile("file")
-	defer file.Close()
 	// path := r.FormValue("path")
-	tmpPath := filepath.Join("/tmp/", header.Filename)
-	dst, _ := os.Create(tmpPath)
-	defer dst.Close()
-	io.Copy(dst, file)
-
-	err := h.s3.UploadFile("datasil-storage", header.Filename, tmpPath, header.Size, header.Header.Get("Content-Type"), nil)
-	if err != nil {
-		utils.ResponseError(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	go func() {
+		defer file.Close()
+		tmpPath := filepath.Join("/tmp/", header.Filename)
+		dst, _ := os.Create(tmpPath)
+		defer dst.Close()
+		io.Copy(dst, file)
+		err := h.s3.UploadFile("datasil-storage", header.Filename, tmpPath, header.Size, header.Header.Get("Content-Type"), nil)
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 
 	dto := dto.CreateFileDto{
 		Name:        utils.GetFileName(header.Filename),
