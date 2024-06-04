@@ -22,6 +22,9 @@ func NewAPIServer(addr string, db *sql.DB) *APIServer {
 
 func (s *APIServer) Run() error {
 	router := http.NewServeMux()
+	router.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok!"))
+	})
 
 	storageHandler := storage.NewStorageHandler(s.db)
 	storageHandler.Register(router)

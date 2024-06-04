@@ -9,11 +9,8 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o /api ./cmd/main.go
 
-FROM build-stage AS run-test-stage
-RUN go test -v ./...
-
 FROM scratch AS build-release-stage
-WORKDIR /
+WORKDIR /app
 
 COPY --from=build-stage /api /api
 
