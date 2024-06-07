@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 
+	"github.com/luizfelipe94/datasil/modules/auth"
 	"github.com/luizfelipe94/datasil/modules/storage"
 	"github.com/rs/cors"
 )
@@ -26,6 +27,8 @@ func (s *APIServer) Run() error {
 		w.Write([]byte("ok!"))
 	})
 
+	authHandler := auth.NewSAuthHandler(s.db)
+	authHandler.Register(router)
 	storageHandler := storage.NewStorageHandler(s.db)
 	storageHandler.Register(router)
 

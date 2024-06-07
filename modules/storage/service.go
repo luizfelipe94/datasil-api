@@ -82,6 +82,7 @@ func (s *Service) GetStats() (count int, size float64, average float64, err erro
 	rows, err := s.db.Query(`
 		SELECT count(*) as count, sum(size) as size, avg(size) as average 
 		FROM storage_files
+		WHERE deletedAt IS NULL
 	`)
 	if err != nil {
 		return 0, 0, 0, err
