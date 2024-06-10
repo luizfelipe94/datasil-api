@@ -2,7 +2,6 @@ package auth
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 
 	"github.com/luizfelipe94/datasil/modules/auth/dto"
@@ -45,7 +44,6 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	}
 	token, err := CreateJWT([]byte("flamengo@2024"), user)
 	if err != nil {
-		log.Panicln(err)
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}

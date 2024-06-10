@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	api "github.com/luizfelipe94/datasil/cmd/api/middlewares"
 	"github.com/luizfelipe94/datasil/configs"
 	"github.com/luizfelipe94/datasil/infra"
 	"github.com/luizfelipe94/datasil/modules/storage/dto"
@@ -37,13 +38,13 @@ func NewStorageHandler(db *sql.DB) *Handler {
 }
 
 func (r *Handler) Register(router *http.ServeMux) {
-	router.HandleFunc("GET /storage/stats", r.handleStats)
-	router.HandleFunc("GET /storage/files", r.handleListFiles)
-	router.HandleFunc("POST /storage/files", r.handleUploadFile)
+	router.Handle("GET /storage/stats", api.AuthMiddleware(http.HandlerFunc(r.handleStats)))
+	router.Handle("GET /storage/files", api.AuthMiddleware(http.HandlerFunc(r.handleListFiles)))
+	router.Handle("POST /storage/files", api.AuthMiddleware(http.HandlerFunc(r.handleUploadFile)))
 }
 
 func (h *Handler) handleStats(w http.ResponseWriter, r *http.Request) {
-	count, size, average, err := h.service.GetStats()
+	count, size, average, err := h.service.GetStats(r.Context())
 	if err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
@@ -61,7 +62,7 @@ func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
 		t, _ := strconv.Atoi(r.URL.Query().Get("page"))
 		page = t
 	}
-	files, err := h.service.ListFiles(page)
+	files, err := h.service.ListFiles(r.Context(), page)
 	if err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
@@ -78,7 +79,7 @@ func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		dst, _ := os.Create(tmpPath)
 		defer dst.Close()
 		io.Copy(dst, file)
-		err := h.s3.UploadFile("datasil-storage", header.Filename, tmpPath, header.Size, header.Header.Get("Content-Type"), nil)
+		err := h.s3.UploadFile("datasil", header.Filename, tmpPath, header.Size, header.Header.Get("Content-Type"), nil)
 		if err != nil {
 			log.Println(err)
 		}
@@ -90,7 +91,7 @@ func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		Size:        header.Size,
 		ContentType: header.Header.Get("Content-Type"),
 	}
-	if err := h.service.UploadFile(dto); err != nil {
+	if err := h.service.UploadFile(r.Context(), dto); err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}

@@ -13,4 +13,6 @@ type File struct {
 	CraetedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DeletedAt   time.Time `json:"-"`
+	CompanyId   string    `json:"companyId"`
+	Path        string    `json:"path"`
 }

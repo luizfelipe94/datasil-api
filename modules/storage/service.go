@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -20,12 +21,14 @@ func NewService(db *sql.DB) *Service {
 	}
 }
 
-func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
+func (s *Service) ListFiles(ctx context.Context, page int) (*db.ResultSet[models.File], error) {
+	companyId := ctx.Value("companyId")
 	rowsCount, err := s.db.Query(`
 		SELECT COUNT(*) AS count 
 		FROM storage_files 
 		WHERE deletedAt IS NULL
-	`)
+		AND companyId = $1
+	`, companyId)
 	if err != nil {
 		return nil, err
 	}
@@ -36,11 +39,12 @@ func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
 		SELECT * 
 		FROM storage_files 
 		WHERE deletedAt IS NULL 
+		AND companyId = $1
 		ORDER BY createdAt DESC
-		OFFSET $1
-		LIMIT $2
+		OFFSET $2
+		LIMIT $3
 	`
-	rows, err := s.db.Query(sql, offset, limit)
+	rows, err := s.db.Query(sql, companyId, offset, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +60,8 @@ func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
 			&file.CraetedAt,
 			&file.UpdatedAt,
 			&file.DeletedAt,
+			&file.CompanyId,
+			&file.Path,
 		)
 		if err != nil {
 			files = append(files, *file)
@@ -65,25 +71,28 @@ func (s *Service) ListFiles(page int) (*db.ResultSet[models.File], error) {
 	return &res, nil
 }
 
-func (s *Service) UploadFile(dto dto.CreateFileDto) error {
+func (s *Service) UploadFile(ctx context.Context, dto dto.CreateFileDto) error {
 	id := uuid.New().String()
+	companyId := ctx.Value("companyId")
 	err := s.db.QueryRow(
-		"INSERT INTO storage_files (id, name, extension, size, contentType) VALUES ($1, $2, $3, $4, $5)",
-		id, dto.Name, dto.Extension, dto.Size, dto.ContentType,
+		"INSERT INTO storage_files (id, name, extension, size, contentType, companyId) VALUES ($1, $2, $3, $4, $5, $6)",
+		id, dto.Name, dto.Extension, dto.Size, dto.ContentType, companyId,
 	)
 	if err != nil {
 		log.Println(err.Err())
-		return nil
+		return err.Err()
 	}
 	return nil
 }
 
-func (s *Service) GetStats() (count int, size float64, average float64, err error) {
+func (s *Service) GetStats(ctx context.Context) (count int, size float64, average float64, err error) {
+	companyId := ctx.Value("companyId")
 	rows, err := s.db.Query(`
 		SELECT count(*) as count, sum(size) as size, avg(size) as average 
 		FROM storage_files
 		WHERE deletedAt IS NULL
-	`)
+		AND companyId = $1
+	`, companyId)
 	if err != nil {
 		return 0, 0, 0, err
 	}

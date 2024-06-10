@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -21,4 +22,21 @@ func CreateJWT(secret []byte, user *users.User) (string, error) {
 		return "", err
 	}
 	return tokenString, err
+}
+
+func ValidateToken(tokenString string) (*jwt.Token, error) {
+	var secretKey = []byte("flamengo@2024")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signature method: %v", token.Header["alg"])
+		}
+		return secretKey, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Error when parsing the token: %v", err)
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("Invalid token")
+	}
+	return token, nil
 }
