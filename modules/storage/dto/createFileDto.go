@@ -14,7 +14,6 @@ type CreateFileDto struct {
 }
 
 func (dto *CreateFileDto) GetDepth() int {
-	fmt.Println(dto.Path)
 	if dto.Path == "/" {
 		return 0
 	}
