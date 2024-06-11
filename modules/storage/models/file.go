@@ -9,10 +9,12 @@ type File struct {
 	Name        string    `json:"name"`
 	Extension   string    `json:"extension"`
 	Size        int64     `json:"size"`
-	ContentType string    `json:"contentType" validate:"required"`
+	ContentType string    `json:"contentType"`
 	CraetedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	UpdatedAt   time.Time `json:"-"`
 	DeletedAt   time.Time `json:"-"`
-	CompanyId   string    `json:"companyId"`
+	CompanyId   string    `json:"-"`
 	Path        string    `json:"path"`
+	IsFolder    bool      `json:"isFolder"`
+	Depth       int       `json:"depth"`
 }

@@ -1,0 +1,8 @@
+ALTER TABLE storage_files
+ADD COLUMN isFolder BOOLEAN DEFAULT false;
+
+ALTER TABLE storage_files
+ALTER COLUMN size DROP NOT NULL;
+
+ALTER TABLE storage_files
+ALTER COLUMN size DROP DEFAULT;

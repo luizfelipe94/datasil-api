@@ -1,0 +1,2 @@
+ALTER TABLE storage_files
+ADD COLUMN depth INT DEFAULT 0;

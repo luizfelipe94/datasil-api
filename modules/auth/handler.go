@@ -37,7 +37,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
-
+	// TODO: move this logics to service layer
 	if !ComparePasswords(user.Password, []byte(dto.Password)) {
 		utils.ResponseError(w, http.StatusUnauthorized, "Unauthorized")
 		return

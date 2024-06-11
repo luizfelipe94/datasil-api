@@ -41,6 +41,7 @@ func (r *Handler) Register(router *http.ServeMux) {
 	router.Handle("GET /storage/stats", api.AuthMiddleware(http.HandlerFunc(r.handleStats)))
 	router.Handle("GET /storage/files", api.AuthMiddleware(http.HandlerFunc(r.handleListFiles)))
 	router.Handle("POST /storage/files", api.AuthMiddleware(http.HandlerFunc(r.handleUploadFile)))
+	router.Handle("POST /storage/folders", api.AuthMiddleware(http.HandlerFunc(r.handleCreateFolder)))
 }
 
 func (h *Handler) handleStats(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +63,12 @@ func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
 		t, _ := strconv.Atoi(r.URL.Query().Get("page"))
 		page = t
 	}
-	files, err := h.service.ListFiles(r.Context(), page)
+	depth := 0
+	if r.URL.Query().Has("depth") {
+		v, _ := strconv.Atoi(r.URL.Query().Get("depth"))
+		depth = v
+	}
+	files, err := h.service.ListFiles(r.Context(), page, depth)
 	if err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
@@ -72,7 +78,10 @@ func (h *Handler) handleListFiles(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 	file, header, _ := r.FormFile("file")
-	// path := r.FormValue("path")
+	path := r.FormValue("path")
+	if path == "" {
+		path = "/"
+	}
 	go func() {
 		defer file.Close()
 		tmpPath := filepath.Join("/tmp/", header.Filename)
@@ -90,10 +99,27 @@ func (h *Handler) handleUploadFile(w http.ResponseWriter, r *http.Request) {
 		Extension:   utils.GetFileExtension(header.Filename),
 		Size:        header.Size,
 		ContentType: header.Header.Get("Content-Type"),
+		Path:        path,
 	}
 	if err := h.service.UploadFile(r.Context(), dto); err != nil {
 		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	utils.ResponseOk(w, http.StatusCreated, map[string]string{"message": "File uploaded successfully"})
+}
+
+func (h *Handler) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
+	var dto dto.CreateFolderDto
+	if err := utils.ParseBody(r, &dto); err != nil {
+		utils.ResponseError(w, http.StatusBadRequest, "Invalid body")
+		return
+	}
+	if err := utils.Validate.Struct(dto); err != nil {
+		utils.ResponseError(w, http.StatusBadRequest, "Invalid body")
+		return
+	}
+	if err := h.service.CreateFolder(r.Context(), dto); err != nil {
+		utils.ResponseError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
 }
